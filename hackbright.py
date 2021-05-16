@@ -75,7 +75,7 @@ def get_project_by_title(title):
     print()
 
 
-def get_grade_by_github_title(student_github, project_title):
+def get_grade_by_github_title(github, title):
     """Print grade student received for a project."""
     
     QUERY = """
@@ -84,7 +84,7 @@ def get_grade_by_github_title(student_github, project_title):
         where student_github = :student_github AND project_title = :project_title
     """
 
-    db_cursor = db.session.execute(QUERY, {'student_github': student_github, 'project_title': project_title})
+    db_cursor = db.session.execute(QUERY, {'student_github': github, 'project_title': title})
     row = db_cursor.fetchone()
 
     print(f"Grade received by {row[0]} for {row[1]}: {row[2]}")
@@ -92,7 +92,18 @@ def get_grade_by_github_title(student_github, project_title):
 
 def assign_grade(github, title, grade):
     """Assign a student a grade on an assignment and print a confirmation."""
-    pass
+    
+    QUERY = """
+    INSERT INTO grades (student_github, project_title, grade)
+        VALUES (:student_github, :project_title, :grade)
+    """
+    db.session.execute(QUERY, {'student_github': github,
+                            'project_title': title,
+                            'grade': grade})
+
+    db.session.commit()
+
+    print(f"Confirmed project {title} is submitted from student {github} with a {grade}." )
 
 
 def handle_input():
@@ -118,6 +129,18 @@ def handle_input():
             first_name, last_name, github = args  # unpack!
             make_new_student(first_name, last_name, github)
 
+        elif command == "project":
+            title = args
+            get_project_by_title(title)
+
+        elif command == "get_grade":
+            github, title = args
+            get_grade_by_github_title(github, title)
+
+        elif command == "give_grade":
+            github, title, grade = args
+            assign_grade(github, title, grade)
+
         else:
             if command != "quit":
                 print("Invalid Entry. Try again.")
@@ -126,7 +149,7 @@ def handle_input():
 if __name__ == "__main__":
     connect_to_db(app)
 
-    #handle_input()
+    handle_input()
 
     # To be tidy, we close our database connection -- though,
     # since this is where our program ends, we'd quit anyway.
